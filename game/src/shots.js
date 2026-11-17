@@ -48,9 +48,24 @@ function autopilot(world) {
 
 /** Step the world for `seconds`, steering with the autopilot each tick. */
 function runFor(world, seconds, steer) {
+  runForThinking(world, seconds, steer ? 0 : Infinity);
+}
+
+/**
+ * Step the world for `seconds`, letting the autopilot think only once per
+ * `thinkEvery` seconds — a slower player, so customers pile up at the
+ * counter instead of being served the instant they arrive. The think clock
+ * persists across calls, so short slices keep the same cadence.
+ */
+let thinkClock = 0;
+function runForThinking(world, seconds, thinkEvery) {
   const steps = Math.floor(seconds / STEP);
   for (let i = 0; i < steps; i += 1) {
-    if (steer) autopilot(world);
+    if (thinkClock >= thinkEvery) {
+      autopilot(world);
+      thinkClock = 0;
+    }
+    thinkClock += STEP;
     stepWorld(world, STEP);
     if (world.phase !== 'play' && world.phase !== 'idle') return;
   }
@@ -67,10 +82,11 @@ export function stageShot(name, world) {
     resetRun(world);
     runFor(world, 200, true);
     if (world.phase === 'dayclear') advanceToNextDay(world);
-    runFor(world, PLAY_MIN_SECONDS, true);
-    // Keep playing in half-second slices until the counter is busy.
+    // A slow player on day 2: thinks every 4 seconds, so orders stack up.
+    thinkClock = 4;
+    runForThinking(world, PLAY_MIN_SECONDS, 4);
     for (let waited = 0; waited < PLAY_BUSY_WINDOW_SECONDS && !isBusyFrame(world); waited += 0.5) {
-      runFor(world, 0.5, true);
+      runForThinking(world, 0.5, 4);
       if (world.phase !== 'play') break;
     }
     return { screen: SCREEN_PLAY };
