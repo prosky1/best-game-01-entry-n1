@@ -1,0 +1,27 @@
+/* Sizzle & Serve: the page is only a frame for the canvas. The canvas keeps
+   its 960x600 logical size and scales to fit the window, letterboxed on the
+   warm wall colour. */
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #2b3a32;
+}
+#game {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  display: block;
+  width: min(100vw, 160vh);
+  height: min(100vh, 62.5vw);
+  touch-action: none;
+}
+/* Read aloud, never shown: the status line screen readers announce. */
+#status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
