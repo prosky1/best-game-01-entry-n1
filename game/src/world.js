@@ -30,7 +30,7 @@ export function createWorld(random) {
     coins: 0,
     score: 0,
     hearts: START_HEARTS,
-    timeLeft: 0,
+    timeLeft: DAYS[0].duration,
     dayEarned: 0,
     target: DAYS[0].target,
     customers: [],

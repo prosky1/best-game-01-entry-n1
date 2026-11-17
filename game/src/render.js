@@ -43,7 +43,7 @@ export function layout(screen, world) {
     customerSlots: [],
     pauseButton: { x: 856, y: 10, width: 44, height: 36 },
     muteButton: { x: 908, y: 10, width: 44, height: 36 },
-    startButton: { x: 380, y: 470, width: 200, height: 56 },
+    startButton: { x: 380, y: 440, width: 200, height: 56 },
     continueButton: { x: 355, y: 420, width: 250, height: 54 },
     nextDayButton: { x: 355, y: 480, width: 250, height: 54 },
     restartButton: { x: 355, y: 420, width: 250, height: 54 },
@@ -59,20 +59,20 @@ export function layout(screen, world) {
   for (let i = 0; i < trayCount; i += 1) {
     out.traySlots.push({
       x: (VIEW.width - trayWidth) / 2 + i * (slotSize + 8),
-      y: 326,
+      y: 336,
       width: slotSize,
       height: slotSize,
     });
   }
   const slots = world ? Math.max(3, world.customers.reduce((max, c) => Math.max(max, c.slot + 1), 3)) : 4;
   for (let i = 0; i < 4; i += 1) {
-    out.customerSlots.push({ x: 60 + i * 225, y: 78, width: 180, height: 210, visible: i < slots });
+    out.customerSlots.push({ x: 60 + i * 225, y: 84, width: 180, height: 204, visible: i < slots });
   }
   if (screen === SCREEN_SHOP) {
     for (let i = 0; i < UPGRADES.length; i += 1) {
       const column = i % 2;
       const row = Math.floor(i / 2);
-      out.shopCards.push({ x: 130 + column * 370, y: 150 + row * 140, width: 340, height: 120 });
+      out.shopCards.push({ x: 130 + column * 370, y: 170 + row * 140, width: 340, height: 120 });
     }
   }
   return out;
@@ -361,7 +361,12 @@ function drawKitchenButtons(ctx, world, ui, rects) {
 }
 
 function drawTray(ctx, world, ui, rects) {
-  centeredText(ctx, '— SERVING COUNTER: click a dish, then its customer —', VIEW.width / 2, 312, 14, MUTED_INK);
+  leftText(ctx, 'SERVING COUNTER', 24, 364, 14, MUTED_INK);
+  ctx.font = font(13, 'normal');
+  ctx.fillStyle = MUTED_INK;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('click a dish, then its customer', VIEW.width - 24, 364);
   rects.traySlots.forEach((slot, i) => {
     const dishId = world.kitchen.tray[i];
     const selected = ui.selectedDish !== null && dishId === ui.selectedDish && world.kitchen.tray.indexOf(dishId) === i;
@@ -379,9 +384,10 @@ function drawPlayScene(ctx, world, ui, rects) {
   ctx.fillRect(0, 0, VIEW.width, 6);
   ctx.fillStyle = FLOOR;
   ctx.fillRect(0, 540, VIEW.width, 60);
-  // Menu board on the wall.
-  fillRoundRect(ctx, { x: 300, y: 62, width: 360, height: 30 }, 8, CHALK);
-  centeredText(ctx, 'TODAY’S MENU — burgers · noodles · fries · salad · soup · pancakes', 480, 78, 12, '#f6e3c8', 'normal');
+  // Menu strip under the HUD: the day's menu, always in view.
+  ctx.fillStyle = '#3a4a40';
+  ctx.fillRect(0, 56, VIEW.width, 20);
+  centeredText(ctx, 'TODAY’S MENU — burgers · noodles · fries · salad · soup · pancakes', 480, 67, 12, '#f6e3c8', 'normal');
   // Customers.
   for (const customer of world.customers) {
     const rect = rects.customerSlots[customer.slot];
@@ -396,7 +402,7 @@ function drawPlayScene(ctx, world, ui, rects) {
     if (rect) centeredText(ctx, customer.name, rect.x + rect.width / 2, 297, 12, '#ffffff', 'normal');
   }
   if (world.message) {
-    centeredText(ctx, world.message, VIEW.width / 2, 332, 15, INK);
+    centeredText(ctx, world.message, VIEW.width / 2, 324, 15, INK);
   }
   drawTray(ctx, world, ui, rects);
   drawKitchenButtons(ctx, world, ui, rects);
@@ -446,8 +452,8 @@ function drawTitle(ctx, world, ui, rects) {
   });
   centeredText(ctx, 'Lose a customer and you lose a heart — 3 hearts, then the stall closes.', 480, 404, 14, MUTED_INK, 'normal');
   drawButton(ctx, rects.startButton, '▶  START DAY 1', true);
-  if (ui.best > 0) centeredText(ctx, `Best score: ${ui.best}`, 480, 560 - 20, 15, MUTED_INK);
-  centeredText(ctx, 'Mouse + keyboard · P pause · M mute', 480, 522, 13, MUTED_INK, 'normal');
+  const bestLine = ui.best > 0 ? `Best score: ${ui.best}  ·  ` : '';
+  centeredText(ctx, `${bestLine}Mouse + keyboard · P pause · M mute`, 480, 522, 13, MUTED_INK, 'normal');
 }
 
 function drawShop(ctx, world, ui, rects) {
@@ -478,7 +484,7 @@ function drawShop(ctx, world, ui, rects) {
 function drawDayClear(ctx, world, ui, rects) {
   drawPlayScene(ctx, world, ui, rects);
   drawOverlay(ctx, 0.5);
-  const panel = { x: 230, y: 120, width: 500, height: 360 };
+  const panel = { x: 230, y: 120, width: 500, height: 380 };
   drawPanel(ctx, panel);
   centeredText(ctx, `★  DAY ${world.day} COMPLETE!  ★`, 480, 172, 30, GREEN);
   centeredText(ctx, `You earned $${world.dayEarned} of the $${world.target} target.`, 480, 214, 17, INK, 'normal');
@@ -486,7 +492,7 @@ function drawDayClear(ctx, world, ui, rects) {
   centeredText(ctx, `Score: ${world.score}   Coins: $${world.coins}`, 480, 282, 18, INK);
   centeredText(ctx, 'Spend your coins in the shop before the next rush.', 480, 330, 15, MUTED_INK, 'normal');
   drawButton(ctx, rects.continueButton, 'TO THE SHOP', true);
-  centeredText(ctx, 'or press Enter', 480, 500 - 20, 13, MUTED_INK, 'normal');
+  centeredText(ctx, 'or press Enter', 480, 486, 13, MUTED_INK, 'normal');
 }
 
 function drawWin(ctx, world, ui, rects) {

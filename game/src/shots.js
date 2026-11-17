@@ -12,9 +12,17 @@ import { cookDish, resetRun, serveCustomer, stepWorld } from './world.js';
 import { SCREEN_OVER, SCREEN_PLAY, SCREEN_SHOP, SCREEN_TITLE } from './render.js';
 
 const TITLE_SECONDS = 12;
-const PLAY_SECONDS = 45;
+const PLAY_MIN_SECONDS = 20;
+const PLAY_BUSY_WINDOW_SECONDS = 50;
 const SHOP_LIMIT_SECONDS = 400;
 const OVER_LIMIT_SECONDS = 600;
+
+/** A frame worth screenshotting: customers waiting, food on the counter or cooking. */
+function isBusyFrame(world) {
+  if (world.customers.length < 2) return false;
+  if (world.kitchen.tray.length > 0) return true;
+  return world.kitchen.cooking.size > 0;
+}
 
 /** Customers most urgent first (least patience left). */
 function urgentFirst(world) {
@@ -55,7 +63,13 @@ function runFor(world, seconds, steer) {
 export function stageShot(name, world) {
   if (name === 'play') {
     resetRun(world);
-    runFor(world, PLAY_SECONDS, true);
+    runFor(world, PLAY_MIN_SECONDS, true);
+    // Keep playing in half-second slices until the counter is busy — the
+    // autopilot serves fast, so a fixed timestamp can catch an empty lull.
+    for (let waited = 0; waited < PLAY_BUSY_WINDOW_SECONDS && !isBusyFrame(world); waited += 0.5) {
+      runFor(world, 0.5, true);
+      if (world.phase !== 'play') break;
+    }
     return { screen: SCREEN_PLAY };
   }
   if (name === 'shop') {
