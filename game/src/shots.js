@@ -8,7 +8,7 @@
 import { STEP } from './config.js';
 import { customerWants, patienceFraction } from './customers.js';
 import { cookingProgress, dishWaiting, stationFree, trayHas } from './kitchen.js';
-import { cookDish, resetRun, serveCustomer, stepWorld } from './world.js';
+import { advanceToNextDay, cookDish, resetRun, serveCustomer, stepWorld } from './world.js';
 import { SCREEN_OVER, SCREEN_PLAY, SCREEN_SHOP, SCREEN_TITLE } from './render.js';
 
 const TITLE_SECONDS = 12;
@@ -62,10 +62,13 @@ function runFor(world, seconds, steer) {
  */
 export function stageShot(name, world) {
   if (name === 'play') {
+    // Day 2, not day 1: two-dish orders keep customers at the counter
+    // longer, so the frame is busy instead of catching an empty lull.
     resetRun(world);
+    runFor(world, 200, true);
+    if (world.phase === 'dayclear') advanceToNextDay(world);
     runFor(world, PLAY_MIN_SECONDS, true);
-    // Keep playing in half-second slices until the counter is busy — the
-    // autopilot serves fast, so a fixed timestamp can catch an empty lull.
+    // Keep playing in half-second slices until the counter is busy.
     for (let waited = 0; waited < PLAY_BUSY_WINDOW_SECONDS && !isBusyFrame(world); waited += 0.5) {
       runFor(world, 0.5, true);
       if (world.phase !== 'play') break;
